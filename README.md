@@ -1,6 +1,8 @@
 # Container Doctor
 
-An AI agent that watches your Docker containers in real-time, diagnoses errors with Claude, and auto-fixes (restarts) them when safe. Based on the freeCodeCamp article "Docker Container Doctor".
+An AI agent that watches your Docker containers in real-time, diagnoses errors with Claude, and auto-fixes (restarts) them when safe.
+
+Based on the freeCodeCamp article: [Docker Container Doctor: How I Built an AI Agent That Monitors and Fixes My Containers](https://www.freecodecamp.org/news/docker-container-doctor-how-i-built-an-ai-agent-that-monitors-and-fixes-my-containers/) by Balajee Asish Brahmandam.
 
 ## How it works
 
