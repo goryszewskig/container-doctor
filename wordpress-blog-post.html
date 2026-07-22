@@ -1,0 +1,217 @@
+<h2>Git Tips &amp; Tricks Every DevOps and Data Engineer Should Know</h2>
+
+<p>Most developers use maybe 10% of what Git can do. If you work in DevOps or data engineering, the commands below will save you hours — from recovering "lost" work to shipping a hotfix while your desk is full of half-finished changes. Bookmark this one.</p>
+
+<h2>First, Decode the Notation</h2>
+
+<p>Git commands look cryptic because of symbols like <code>HEAD~5</code> or <code>stash@{1}</code>. Here's the cheat sheet:</p>
+
+<table>
+<thead>
+<tr><th>Notation</th><th>Meaning</th><th>Example</th></tr>
+</thead>
+<tbody>
+<tr><td><code>HEAD</code></td><td>Pointer to your current commit (tip of the checked-out branch)</td><td><code>git show HEAD</code></td></tr>
+<tr><td><code>HEAD~N</code></td><td>N commits <em>before</em> HEAD, following first parents</td><td><code>HEAD~5</code> = 5 commits back</td></tr>
+<tr><td><code>HEAD^</code></td><td>First parent of HEAD (<code>HEAD^2</code> = second parent of a merge commit)</td><td><code>git revert -m 1 &lt;sha&gt;</code></td></tr>
+<tr><td><code>&lt;sha&gt;</code></td><td>A commit's hash ID — full 40 chars or a short prefix like <code>a1b2c3d</code></td><td><code>git cherry-pick a1b2c3d</code></td></tr>
+<tr><td><code>origin/main</code></td><td>Your local copy of where the remote's main was at last fetch</td><td>updated by <code>git fetch</code></td></tr>
+<tr><td><code>HEAD@{N}</code></td><td>Reflog entry — where HEAD was N <em>operations</em> ago</td><td><code>HEAD@{2}</code> = two actions ago</td></tr>
+<tr><td><code>stash@{N}</code></td><td>Entry on the stash stack, 0 = most recent</td><td><code>git stash apply stash@{1}</code></td></tr>
+<tr><td><code>A..B</code></td><td>Commits reachable from B but not A (linear range)</td><td><code>git log main..feature</code></td></tr>
+<tr><td><code>A...B</code></td><td>Changes on B since the branches diverged</td><td><code>git diff main...HEAD</code></td></tr>
+<tr><td><code>@{u}</code></td><td>The upstream branch your current branch tracks</td><td><code>git diff @{u}..HEAD</code></td></tr>
+</tbody>
+</table>
+
+<p><strong>Common confusion:</strong> <code>~</code> walks <em>history back</em> by commits, <code>^</code> picks a <em>parent</em> (matters for merges), and <code>@{}</code> walks the <em>reflog</em> — what you actually did locally, including discarded work.</p>
+
+<h2>Branching &amp; History</h2>
+
+<h3>Interactive rebase — clean up before you push</h3>
+<pre><code>git rebase -i HEAD~3
+# mark commits 2 and 3 as "squash" to fold them into the first
+</code></pre>
+
+<h3>Fixup commits — fold small fixes into the right commit automatically</h3>
+<pre><code>git commit --fixup a1b2c3d        # small fix for commit a1b2c3d
+git rebase -i --autosquash main   # git places it automatically
+</code></pre>
+
+<h3>Cherry-pick — port one commit to another branch</h3>
+<pre><code>git checkout release/1.4
+git cherry-pick a1b2c3d           # hotfix commit from master
+</code></pre>
+
+<h3>Reflog — your time machine</h3>
+<p>Deleted a branch? Botched a rebase? Nothing is truly lost for ~90 days:</p>
+<pre><code>git reflog
+git reset --hard HEAD@{5}         # jump back to a known-good state
+</code></pre>
+
+<h3>Bisect — find the commit that broke everything</h3>
+<pre><code>git bisect start
+git bisect bad                    # current version is broken
+git bisect good v1.2.0            # this tag was fine
+# git checks out middle commits; mark each good/bad until the culprit is found
+git bisect reset
+</code></pre>
+
+<h3>Visual branch map</h3>
+<pre><code>git log --oneline --graph --all --since="2 weeks ago" --author=me
+</code></pre>
+
+<h2>Daily Efficiency</h2>
+
+<h3>Modern replacements for checkout</h3>
+<pre><code>git switch -c feature/new-thing   # create + switch branch
+git restore src/app.py            # discard local changes in file
+</code></pre>
+
+<h3>Worktree — two branches, two folders, zero stashing</h3>
+<pre><code>git worktree add ../proj-hotfix -b hotfix/urgent
+cd ../proj-hotfix &amp;&amp; make fix &amp;&amp; git push
+git worktree remove ../proj-hotfix
+</code></pre>
+
+<h3>Three dots — what did I actually change on this branch?</h3>
+<pre><code>git fetch origin
+git diff origin/main...HEAD --stat
+</code></pre>
+
+<h3>Archaeology — who wrote this, and when did that value change?</h3>
+<pre><code>git blame -L 40,60 -- docker-compose.yml
+git log -S "POOL_SIZE" --oneline  # commits that added/removed this text
+</code></pre>
+
+<h3>Aliases that pay for themselves</h3>
+<pre><code>git config --global alias.lg "log --oneline --graph --all"
+git config --global alias.st "status -sb"
+</code></pre>
+
+<h2>Safer Pushing &amp; Syncing</h2>
+
+<h3>Force-push without the foot-gun</h3>
+<pre><code>git rebase main
+git push --force-with-lease       # refuses if someone else pushed meanwhile
+</code></pre>
+
+<h3>Linear history by default</h3>
+<pre><code>git config --global pull.rebase true
+git config --global fetch.prune true
+</code></pre>
+
+<h3>Create a merge request straight from push (GitLab)</h3>
+<pre><code>git push -o merge_request.create -o merge_request.target=main
+</code></pre>
+
+<h2>Partial &amp; Precise Staging</h2>
+
+<p>Stage (or discard) only the changes you want — even within a single file:</p>
+<pre><code>git add -p container_doctor.py    # y/n/s/e per hunk
+git restore -p                    # discard selected hunks
+git restore --staged secrets.yaml # unstage that one file you didn't mean to add
+git commit -v                     # see the diff in the commit editor
+</code></pre>
+
+<h2>DevOps-Specific Patterns</h2>
+
+<h3>Sparse checkout for monorepos</h3>
+<pre><code>git clone --filter=blob:none --sparse https://github.com/org/monorepo
+cd monorepo
+git sparse-checkout set infra/terraform services/api
+</code></pre>
+
+<h3>Shallow clones in CI — faster pipelines</h3>
+<pre><code>git clone --depth 1 https://github.com/org/repo
+</code></pre>
+
+<h3>End the CRLF/LF wars (especially on Windows)</h3>
+<p>Add a <code>.gitattributes</code> file:</p>
+<pre><code>* text=auto
+*.sh text eol=lf
+*.py text eol=lf
+*.png binary
+</code></pre>
+
+<h3>Pre-commit hooks — lint, format, and scan for secrets automatically</h3>
+<pre><code>pip install pre-commit gitleaks
+pre-commit install                # runs on every git commit
+</code></pre>
+
+<h3>Signed release tags</h3>
+<pre><code>git tag -s v1.2.0 -m "release 1.2.0"
+git push origin v1.2.0
+</code></pre>
+
+<h3>Conventional Commits — unlock automated changelogs</h3>
+<pre><code>git commit -m "feat(api): add /history endpoint"
+git commit -m "fix(db): prevent restart loop on disk-full"
+</code></pre>
+
+<h2>Data Engineering Angle</h2>
+
+<h3>Committed a secret or a huge CSV? Purge it from history</h3>
+<pre><code>pip install git-filter-repo
+git filter-repo --path credentials.json --invert-paths
+git push --force-with-lease
+# then rotate the secret anyway — assume it leaked
+</code></pre>
+
+<h3>Large files belong in LFS (or DVC), not plain Git</h3>
+<pre><code>git lfs install
+git lfs track "*.parquet"
+git add .gitattributes data/sample.parquet
+git commit -m "chore: track sample dataset with LFS"
+</code></pre>
+
+<h3>Debug why a file is ignored</h3>
+<pre><code>git check-ignore -v data/raw/export.csv
+</code></pre>
+
+<h2>The Recovery Toolkit (Memorize This)</h2>
+
+<pre><code>git reflog                      # find lost state
+git reset --hard HEAD@{2}       # jump back to it
+git revert &lt;sha&gt;                # undo a pushed commit safely
+git clean -ndx                  # PREVIEW untracked junk before deleting
+git clean -fdx                  # actually delete it
+</code></pre>
+
+<p>Undo a bad merge that's already pushed:</p>
+<pre><code>git revert -m 1 &lt;merge-commit-sha&gt;
+git push
+</code></pre>
+
+<h2>Shipping a Hotfix with a Desk Full of WIP</h2>
+
+<p>The classic panic scenario: you're mid-feature, everything is uncommitted, and production is on fire. Stash, fix, restore:</p>
+
+<pre><code># 1. Save your WIP aside (-u includes untracked files, -m labels the stash)
+git stash push -u -m "wip: feature X in progress"
+
+# 2. Working tree is clean — create a hotfix branch
+git checkout -b hotfix/critical-issue
+# ...make the fix...
+git add &lt;fixed-files&gt;
+git commit -m "fix: critical issue"
+git push -u origin hotfix/critical-issue
+
+# 3. Go back and restore your work
+git checkout &lt;your-feature-branch&gt;
+git stash pop
+</code></pre>
+
+<p>If the fix touches <em>different files</em> than your WIP, you don't even need stash — just <code>git add</code> the fixed files and commit. Uncommitted work is never pushed.</p>
+
+<h2>Rules of Thumb</h2>
+
+<ol>
+<li>Rebase your own branches; merge shared branches (main)</li>
+<li>Small, atomic commits — one logical change each</li>
+<li><code>git status</code> + <code>git diff --staged</code> before every commit</li>
+<li>Rewrite history only before it's pushed or shared</li>
+<li>When lost: <code>git reflog</code> first, panic never</li>
+</ol>
+
+<p><strong>Where to start:</strong> master <code>rebase -i</code>, <code>reflog</code>, and <code>--force-with-lease</code>. Those three alone will put you ahead of most engineers.</p>
