@@ -1,5 +1,30 @@
 # Git Tips & Tricks for DevOps / Data Engineers
 
+## Git Notation Glossary
+
+Before the commands — here's what the cryptic symbols mean:
+
+| Notation | Meaning | Example |
+|---|---|---|
+| `HEAD` | Pointer to your current commit (usually the tip of the checked-out branch) | `git show HEAD` |
+| `HEAD~N` | N commits *before* HEAD, following first parents | `HEAD~5` = 5 commits back |
+| `HEAD^` | First parent of HEAD (`HEAD^2` = second parent of a merge commit) | `git revert -m 1 <sha>` uses parent #1 as the "mainline" |
+| `<sha>` | A commit's hash ID (full 40 chars or short prefix like `a1b2c3d`) — every commit has one | `git cherry-pick a1b2c3d` |
+| `main` | Branch name — a movable pointer to a commit | `git diff main...HEAD` |
+| `origin/main` | Your local *copy* of where the remote's main was at last fetch | `git fetch` updates it |
+| `HEAD@{N}` | Reflog entry — where HEAD was N moves ago (NOT the same as `HEAD~N`) | `HEAD@{2}` = two operations ago (commits, checkouts, rebases all count) |
+| `stash@{N}` | Entry on the stash stack, 0 = most recent | `git stash apply stash@{1}` |
+| `A..B` | Commits reachable from B but not A (linear range) | `git log main..feature` |
+| `A...B` | Commits on either side since their common ancestor (symmetric difference); in `diff`, shows changes on B since the fork point | `git diff main...HEAD` |
+| `<name>` in docs | Placeholder — replace with your real value | `git checkout -b <branch>` → `git checkout -b fix/typo` |
+| `@{u}` / `@{upstream}` | The upstream branch your current branch tracks | `git diff @{u}..HEAD` |
+| `@` alone | Shortcut for `HEAD` | `git rebase -i @~3` |
+
+Common confusion — `~` vs `^` vs `@{}`:
+- `HEAD~5` walks **history back** 5 commits ( ancestry )
+- `HEAD^2` picks a **parent** (only matters for merge commits)
+- `HEAD@{5}` walks the **reflog** — what *you did locally* 5 operations ago, including discarded work
+
 ## Branching & History
 
 - `git rebase -i HEAD~5` — squash/reword/reorder commits before pushing
